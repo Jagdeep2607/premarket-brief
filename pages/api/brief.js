@@ -150,8 +150,10 @@ REAL TECHNICAL DATA for ${ticker} (calculated from ${bars.length} days of Polygo
 - Resistance: $${res20.join(', $')}
 - Support: $${sup20.join(', $')}
 
-NEWS FROM POLYGON:
+NEWS FROM POLYGON (last 48h):
 ${newsText || 'No recent news found'}
+
+Also use web_search to find: "${ticker} stock news today", "${ticker} analyst upgrade downgrade", "${ticker} upcoming earnings events" — and include any relevant findings in your response.
 
 Based on ALL the above, return ONLY a JSON object. No markdown. No text outside JSON. All string values single line no newlines:
 {"news":[{"headline":"max 8 words","sentiment":"bullish|bearish|neutral","impact":"one line why matters today","stars":4,"starColor":"green|red|yellow","impactLabel":"Very High|High|Moderate|Low"}],"upcomingEvents":[{"type":"EARNINGS|MACRO|FED","title":"name","timing":"when","note":"price impact","color":"#7c3aed"}],"bias":"BULLISH|BEARISH|NEUTRAL","biasReason":"Two sentences combining Wyckoff phase and news into one clear daily bias."}
@@ -167,7 +169,8 @@ Rules: max 4 news, max 2 events, stars 1-5, no trailing commas.`
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 1500,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }]
       })
     })
