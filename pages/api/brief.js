@@ -192,13 +192,31 @@ Rules: max 4 news, max 2 events, stars 1-5, no trailing commas. Your FINAL outpu
       biasReason: `${wyPhase} structure detected. ${wyNote}`
     }
 
-    const jsonMatch = txt.replace(/```json|```/g, '').match(/\{[\s\S]*\}/)
+    console.log('Claude raw response:', JSON.stringify(claudeData).slice(0, 500))
+    console.log('Extracted txt:', txt.slice(0, 500))
+    
+    const cleaned = txt.replace(/```json|```/g, '').trim()
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+    
+    console.log('JSON match found:', !!jsonMatch)
+    if (jsonMatch) {
+      console.log('JSON match:', jsonMatch[0].slice(0, 200))
+    }
+    
     if (jsonMatch) {
       let s = jsonMatch[0]
         .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ' ')
         .replace(/,(\s*[}\]])/g, '$1')
-      s = s.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, m => m.replace(/\n|\r|\t/g, ' '))
-      try { claudeResult = JSON.parse(s) } catch(e) { /* keep fallback */ }
+      // Fix newlines inside string values
+      s = s.replace(/"((?:[^"\\]|\\[\s\S])*)"/g, (m, inner) => {
+        return '"' + inner.replace(/\n/g, ' ').replace(/\r/g, '').replace(/\t/g, ' ') + '"'
+      })
+      try { 
+        claudeResult = JSON.parse(s)
+        console.log('Parse success, bias:', claudeResult.bias)
+      } catch(e) { 
+        console.log('Parse error:', e.message, 'near:', s.slice(0,300))
+      }
     }
 
     // ── Final response ───────────────────────────────────────────────
