@@ -158,7 +158,7 @@ Also use web_search to find: "${ticker} stock news today", "${ticker} analyst up
 Based on ALL the above, return ONLY a JSON object. No markdown. No text outside JSON. All string values single line no newlines:
 {"news":[{"headline":"max 8 words","sentiment":"bullish|bearish|neutral","impact":"one line why matters today","stars":4,"starColor":"green|red|yellow","impactLabel":"Very High|High|Moderate|Low"}],"upcomingEvents":[{"type":"EARNINGS|MACRO|FED","title":"name","timing":"when","note":"price impact","color":"#7c3aed"}],"bias":"BULLISH|BEARISH|NEUTRAL","biasReason":"Two sentences combining Wyckoff phase and news into one clear daily bias."}
 
-Rules: max 4 news, max 2 events, stars 1-5, no trailing commas.`
+Rules: max 4 news, max 2 events, stars 1-5, no trailing commas. Your FINAL output must be ONLY the JSON object and nothing else. Do not add any explanation before or after the JSON.`
 
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -169,14 +169,19 @@ Rules: max 4 news, max 2 events, stars 1-5, no trailing commas.`
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
+        max_tokens: 2000,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }]
       })
     })
 
     const claudeData = await claudeRes.json()
-    const txt = (claudeData.content || []).map(b => b.type === 'text' ? b.text : '').join('')
+    // Web search returns multiple content blocks — grab all text blocks including after search
+    const blocks = claudeData.content || []
+    const txt = blocks
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('')
 
     // Robust JSON parsing with fallback
     const fallbackBias = hh && hl && t20up ? 'BULLISH' : lh && ll && !t20up ? 'BEARISH' : 'NEUTRAL'
